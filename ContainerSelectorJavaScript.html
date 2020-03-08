@@ -8,6 +8,7 @@
     var containerWrapper = document.querySelector('#containerWrapper');
     var accounts = document.querySelector('#accounts');
     var containers = document.querySelector('#containers');
+    var versions = document.querySelector('#versions');
 
     var addContainers = function(containerSummary) {
       var temp;
@@ -26,12 +27,15 @@
         temp.selected = container.selected;
         containerSelect.appendChild(temp);
       });
+      
       containerSelect.addEventListener('change', function() {
         resetFields();
         buildButton.disabled = false;
       });
+      
       accountWrapper.style.display = 'block';
       containerWrapper.style.display = 'block';
+      versionsWrapper.style.display = 'block';
       containerSelect.disabled = false;
       buildButton.disabled = false;
     };  
@@ -45,7 +49,7 @@
     };
     
     var resetFields = function() {
-      info.innerHTML = 'Select the Google Tag Manager container, whose <strong>latest version</strong> you want to use to generate the container documentation.';
+      info.innerHTML = 'Select the Google Tag Manager container, whose <strong>versions</strong> you want to use to generate the container documentation.';
     };
     
     var addAccounts = function(accountSummary) {
@@ -95,7 +99,8 @@
         .withSuccessHandler(function() { google.script.host.close(); })
         .startProcess(
           accounts.options[accounts.selectedIndex].value, 
-          containers.options[containers.selectedIndex].value
+          containers.options[containers.selectedIndex].value,
+          versions.options[versions.selectedIndex].value
         );
     });
   })();

@@ -2,6 +2,7 @@
   (function() {
     var push = document.querySelector('#push');
     var info = document.querySelector('#info');
+    var close = document.querySelector('#close');
     var selectWorkspaces = document.querySelector('#workspaces');
     var wsname = '';
     var wsid = '';
@@ -9,7 +10,7 @@
     var cid = '';
     var count = 0;
     var length = 0;
-    var notes = [];
+    var items = [];
     
     var arraySortByName = function(array) {
       return array.sort(function(a, b) {
@@ -20,44 +21,79 @@
     };
     
     var versionCreated = function(version) {
-      info.innerHTML = 'Version ' + version.containerVersionId + ' successfully created. <a href="#" id="build">Build documentation</a> to see the changes.';
-      document.querySelector('#build').addEventListener('click', function(e) {
+      
+      info.innerHTML = 'Version ' + version.containerVersionId + ' was successfully created. <a href="#" id="rebuild">Quick Rebuild</a> to see the latest release.';
+      
+      document.querySelector('#rebuild').addEventListener('click', function(e) {
+        
         e.preventDefault();
-        google.script.run.withSuccessHandler(function() { google.script.host.close(); }).withFailureHandler(onError).startProcess(version.accountId, version.containerId);
+            
+        push.disabled = false;
+        push.innerHTML = 'Rebuilding...';
+        close.innerHTML = 'Cancel';
+        
+        google.script.run.withSuccessHandler(onDone).withFailureHandler(onError).quickRebuild();
       });
     };
     
-    var updateSingleNote = function() {
-      if (notes.length) {
+    var updateSingle = function() {
+      
+      if (items.length) {
+      
         count++;
-        var obj = notes.shift();
-        aid = obj.json.accountId;
-        cid = obj.json.containerId;
-        info.innerHTML = 'Updating notes for ' + obj.json.name + ' (' + count + '/' + length + ').';
-        google.script.run.withSuccessHandler(updateSingleNote).withFailureHandler(onError).updateSingleNote(obj, wsid);
-      } else {
-        info.innerHTML = '<strong>Done updating ' + length + ' notes!</strong> You can now close this modal.<br/><br/>Don\'t forget that you still need to <strong>publish</strong> or <strong>create a version from</strong> the workspace "' + wsname + '" in order to see the notes when you build the documentation again.<br/><br/>You can also click <a href="#" id="createVersion">here</a> to create a version of the workspace at your own risk.';
+        var item = items.shift();
+        var which = items.notes ? 'notes' : 'folder';
+        
+        aid = item.accountId;
+        cid = item.containerId;
+        
+        info.innerHTML = 'Updating ' + which + ' for ' + item.type.slice(0, -1) + ' <b>' + (item.name || item.id) + '</b> (' + count + '/' + length + ').<br><br><i>* Batch update throttled to fit under the 25 hits / 100 sec. GTM API quota.</i>';
+        google.script.run.withSuccessHandler(updateSingle).withFailureHandler(onError).updateSingle(item, wsid, items);
+      } 
+      else {
+      
+        info.innerHTML = '<strong>Done updating ' + count + ' items!</strong> You can now close this modal.\
+        <br/><br/>Don\'t forget that you still need to <strong>publish</strong> / <strong>create a version from</strong> the workspace "' + wsname + '" in order to see the changes when you build the documentation again.<br/>\
+        <br/>You can also click <a href="#" id="createVersion">here</a> to create a version and publish the workspace at your own risk.';
+        close.innerHTML = 'Close';
+        push.innerHTML = 'Finished';
+        
+        push.disabled = false;
+         
+        push.addEventListener('click', onDone);
+        
         document.querySelector('#createVersion').addEventListener('click', function(e) {
           e.preventDefault();
-          info.innerHTML = 'Creating version...';
+          push.innerHTML = 'Publishing...';
+          push.disabled = true;
+          close.innerHTML = 'Cancel';
+          info.innerHTML = 'Creating new published version of this workspace...';
           google.script.run.withSuccessHandler(versionCreated).withFailureHandler(onError).createVersion(aid, cid, wsid);
         });
       }
     };
     
-    var updateNotes = function(notesToUpdate) {
+    var updateItems = function(toUpdate) {
+      
       wsid = selectWorkspaces.options[selectWorkspaces.selectedIndex].value;
       wsname = selectWorkspaces.options[selectWorkspaces.selectedIndex].innerHTML;
-      length = notesToUpdate.length;
+      
+      length = toUpdate.length;
       count = 0;
-      notes = notesToUpdate;
+      items = toUpdate;
       
       if (length) {
-        updateSingleNote();
-      } else {      
-        onError({message: 'There were no changed notes fields to update in the sheets for the selected container.'});
+        updateSingle();
+      } 
+      else {      
+        onError({message: 'There were no changed folder or notes fields to update in the sheets for the selected container.'});
       }
     };
+    
+    var onDone = function() {
+
+       google.script.host.close();
+    }
     
     var onError = function(error) {
       push.disabled = true;
@@ -90,7 +126,7 @@
       push.innerText = 'Working...';
       push.className = 'share';
       selectWorkspaces.disabled = true;
-      google.script.run.withSuccessHandler(updateNotes).withFailureHandler(onError).processNotes('push');
+      google.script.run.withSuccessHandler(updateItems).withFailureHandler(onError).processChanges('push');
     });
     
     google.script.run.withSuccessHandler(addWorkspaces).withFailureHandler(onError).getWorkspaces();
