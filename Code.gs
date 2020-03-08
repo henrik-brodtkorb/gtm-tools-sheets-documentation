@@ -237,7 +237,7 @@ function updateSingle(item, wsid, items) {
   
   var remote = TagManager.Accounts.Containers.Workspaces[Type].get(path);
   
-  if (items.length > 12)
+  //if (items.length > 6)
     Utilities.sleep(4.02 * 1000);
   
   if (item.notes)
@@ -249,7 +249,7 @@ function updateSingle(item, wsid, items) {
   Logger.log('updateSingle updating:', item, remote);
   TagManager.Accounts.Containers.Workspaces[Type].update(remote, path);
   
-  if (items.length > 12)
+  //if (items.length > 6)
     Utilities.sleep(4.02 * 1000);
 }
 
