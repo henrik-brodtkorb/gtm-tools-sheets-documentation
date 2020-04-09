@@ -4,4 +4,7 @@
 <h2>Description:</h2>
 Enables you to easily create a record of GTM settings and releases across multiple containers in a way that can be presented to non-technical audiences.
 
-Also allows you to bulk-edit tag, trigger, and variable notes, and bulk-sort assets into folders.
+Also enables bulk actions:
+
+- edit notes for tags, triggers, and variables
+- move assets into folders.
